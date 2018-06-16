@@ -1,5 +1,4 @@
 ﻿@page "/fetchdata"
-@inject HttpClient Http
 
 <h1>Weather forecast</h1>
 
@@ -11,12 +10,24 @@
 }
 else
 {
+    <div class="form-group row">
+        <label for="staticEmail" class="col-sm-2 col-form-label">Temp. display</label>
+        <div class="col-sm-10">
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-secondary @(showCelcius? "active" : null)">
+                    <input type="radio" name="showCelcius" checked="@showCelcius" onclick="@(()=>ShowDegreesInCelcius(true))" /> Celcius
+                </label>
+                <label class="btn btn-secondary @(showCelcius? null : "active")">
+                    <input type="radio" name="showCelcius" checked="@(!showCelcius)" onclick="@(()=>ShowDegreesInCelcius(false))" /> Farenheit
+                </label>
+            </div>
+        </div>
+    </div>
     <table class="table">
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
+                <th>Temp.</th>
                 <th>Summary</th>
             </tr>
         </thead>
@@ -25,8 +36,16 @@ else
             {
                 <tr>
                     <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
+                    <td>
+                        @if (showCelcius)
+                        {
+                            <span>@forecast.TemperatureC&deg;C</span>
+                        }
+                        else
+                        {
+                            <span>@forecast.TemperatureF&deg;F</span>
+                        }
+                    </td>
                     <td>@forecast.Summary</td>
                 </tr>
             }
@@ -34,19 +53,27 @@ else
     </table>
 }
 
-@functions {
-    WeatherForecast[] forecasts;
+@functions
+{
+bool showCelcius = true;
 
-    protected override async Task OnInitAsync()
-    {
-        forecasts = await Http.GetJsonAsync<WeatherForecast[]>("sample-data/weather.json");
-    }
+IEnumerable<Services.WeatherData> forecasts = null;
 
-    class WeatherForecast
-    {
-        public DateTime Date { get; set; }
-        public int TemperatureC { get; set; }
-        public int TemperatureF { get; set; }
-        public string Summary { get; set; }
-    }
+protected override async Task OnInitAsync()
+{
+    await Task.Delay(1000);
+    forecasts = await this.GetWeatherAsync();
+}
+
+private async Task<IEnumerable<Services.WeatherData>> GetWeatherAsync()
+{
+    var service = new Services.WeatherService();
+    return await service.GetWeatherAsync();
+}
+
+private void ShowDegreesInCelcius(bool value)
+{
+    showCelcius = value;
+}
+
 }
